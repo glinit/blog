@@ -3,8 +3,8 @@ title: "Spark核心算子"
 date: 2020-08-11T01:37:56+08:00
 lastmod: 2020-08-11T01:37:56+08:00
 draft: false
-tags: ["Spark", "大数据"]
-categories: ["SQL"]
+tags: ["Spark", "数据仓库"]
+categories: ["Spark"]
 author: "ChavinKing"
 ---
 

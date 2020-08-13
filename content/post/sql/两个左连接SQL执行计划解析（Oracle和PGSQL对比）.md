@@ -8,13 +8,29 @@ categories: ["SQL"]
 author: "ChavinKing"
 ---
 
+___
 
 
-上一篇解析链接如下：
-https://www.cnblogs.com/wcwen1990/p/9325968.html
 
 1、SQL示例1：
 
+```sql
+select * 
+from (
+select * from tmp1 where c >= 1
+) t1 left join (
+select * from tmp2 where b < 30
+) t2 on t1.a = t2.a 
+and t2.d > 1 and t1.e >= 2 
+where t1.b < 50 
+;
+```
+
+
+
+​	Oracle执行结果：
+
+```sql
 SQL> select * 
 from (
 select * from tmp1 where c >= 1
@@ -67,14 +83,19 @@ Statistics
 	  7  consistent gets
 	  0  physical reads
 	  0  redo size
-	   1082  bytes sent via SQL*Net to client
+       1082  bytes sent via SQL*Net to client
 	524  bytes received via SQL*Net from client
 	  2  SQL*Net roundtrips to/from client
 	  0  sorts (memory)
 	  0  sorts (disk)
 	  4  rows processed
+```
 
 
+
+​	PostgreSQL示例：
+
+```sql
 postgres=# explain analyze select * 
 postgres-# from (
 postgres(# select * from tmp1 where c >= 1
@@ -97,17 +118,40 @@ postgres-# ;
  Total runtime: 0.063 ms
 (9 rows)
 
+```
 
-SQL执行计划的分析：
 
+
+​	执行计划分析：
+
+```wik
 1) 全表扫描左表TMP1，同时根据TMP1表子查询条件"C">=1和where过滤条件"T1"."B"<50联合过滤，即filter("TMP1"."B"<50 AND "C">=1)，计算结果临时表记为tmp1；
 2) 全表扫描右表TMP2，同时根据TMP2表子查询条件"B"(+)<30和on子句"T2"."D"(+)>1联合过滤，即filter("TMP2"."D"(+)>1 AND "B"(+)<30)，计算结果临时表记为tmp2；
 3) 左表TMP1及右表TMP2处理后临时表tmp1和tmp2通过access("TMP1"."A"="TMP2"."A"(+))连接条件进行Hash Left Join操作，左临时表结果集全量返回，右表不匹配行置为null，返回结果临时表记为tmp3；
 4) 返回结果集。
+```
+
 
 
 2、SQL示例2：
 
+```sql
+select * 
+from (
+select * from tmp1 where c >= 1
+) t1 left join (
+select * from tmp2 where b < 30
+) t2 on t1.a = t2.a 
+and t2.d > 1 and t1.e >= 2 
+where t1.b < 50 and t2.e <= 3 
+;
+```
+
+
+
+​	Oracle示例：
+
+```sql
 SQL> select * 
 from (
 select * from tmp1 where c >= 1
@@ -162,9 +206,13 @@ Statistics
 	  0  sorts (disk)
 	  1  rows processed
 
-SQL> 
+```
 
 
+
+​	PostgreSQL示例：
+
+```sql
 postgres=# select * 
 postgres-# from (
 postgres(# select * from tmp1 where c >= 1
@@ -199,13 +247,17 @@ postgres-# ;
                Filter: ((b < 30) AND (d > 1) AND (e <= 3))
  Total runtime: 0.070 ms
 (8 rows)
+```
 
-postgres=# 
 
 
-SQL执行计划的分析：
+​	执行计划分析：
 
+```wik
 1) 全表扫描左表TMP2，同时根据TMP2表子查询条件"B"<30和where过滤条件"TMP2"."E"<=3及ON子句过滤条件"TMP2"."D">1联合过滤，即filter("TMP2"."E"<=3 AND "TMP2"."D">1 AND "B"<30)，计算结果临时表记为tmp1；
 2) 全表扫描右表TMP1，同时根据TMP1表子查询条件"C">=1和where子句过滤条件"TMP1"."B"<50及ON子句"TMP1"."E">=2联合过滤，即filter("TMP1"."B"<50 AND "TMP1"."E">=2 AND "C">=1)，计算结果临时表记为tmp2；
 3) 临时表tmp1和tmp2通过access("TMP1"."A"="TMP2"."A")连接条件进行Hash Join连接操作（此处left join写法已经被转换为内链接），返回匹配结果临时表记为tmp3；
 4) 返回结果集。
+
+```
+
